@@ -61,3 +61,28 @@ class StarLinkedList:
 
     def cal_parallel_res(self, res1, res2):
         return res1 * res2 / (res1 + res2)
+
+    # 简单的电阻串联网络，默认每个节点的子节点只有两个，不存在分支
+    # 电阻阻值相加，一边累加阻值，一边删除被 merge 的节点，最后只剩下首尾两个节点
+    # node1 <--> res1 <--> node2 <--> res2 <--> node3
+    # ==>
+    # node1 <--> (res1 + res2) <--> node3
+    def series_res_merge(self, node_num1, node_num2):
+        if node_num1 not in self.nodeList:
+            return None
+        if node_num2 not in self.nodeList:
+            return None
+        next_node_num = self.nodeList[node_num1].childNodes.remove(node_num1)[0]
+        third_node_num = self.nodeList[node_num1].childNodes.remove(next_node_num)[0]
+        value_index1 = '@'.join(sorted([node_num1, next_node_num]))
+        value_index2 = '@'.join(sorted([next_node_num, third_node_num]))
+        value_index3 = '@'.join(sorted([node_num1, third_node_num]))
+        self.value_list[value_index3] = self.value_list[value_index1] + self.value_list[value_index2]
+        self.value_list.pop(value_index1)
+        self.value_list.pop(value_index2)
+        self.delNode(next_node_num)
+        if third_node_num != node_num2:
+            self.series_res_merge(node_num1, node_num2)
+        else:
+            value_index = '@'.join(sorted([node_num1, node_num2]))
+            return self.value_list[value_index]

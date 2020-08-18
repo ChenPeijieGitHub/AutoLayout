@@ -17,6 +17,7 @@ from api.star_linked_list import StarLinkedList
 
 class ReadSpice:
     def __init__(self, spiFile):
+        self.linked_dict = {}
         self.h_spiFile = None
         try:
             self.h_spiFile = open(spiFile, 'r')
@@ -25,20 +26,27 @@ class ReadSpice:
             exit('001')
 
     def read_res(self):
-        link = StarLinkedList()
         line = self.h_spiFile.readline()
         while line != '':
             #print(line)
-            l_res = re.split(r'\t| ', line)
-            node_num1 = l_res[1].split('#')[1]
-            node_num2 = l_res[2].split('#')[1]
-            value = l_res[3]
-            link.addNode(node_num1, node_num2, value)
+            if line[0] == 'R':
+                l_split = line.split()
+                net_name = l_split[1].split('#')[0]
+                if net_name not in self.linked_dict:
+                    self.linked_dict[net_name] = StarLinkedList()
+                node_num1 = l_split[1].split('#')[-1]
+                node_num2 = l_split[2].split('#')[-1]
+                value = l_split[3]
+                self.linked_dict[net_name].addNode(node_num1, node_num2, value)
             line = self.h_spiFile.readline()
-        # for x in link.nodeList:
-        #     print(x)
-        #     print(link.nodeList[x].childNodes)
-        link.trace('123', '127')
+
+    def show(self):
+        for m_netName in self.linked_dict:
+            print(m_netName)
+            for m_node_num in self.linked_dict[m_netName].nodeList:
+                print(m_node_num)
+                print(self.linked_dict[m_netName].nodeList[m_node_num].childNodes)
+        self.linked_dict[m_netName].trace('123', '127')
 
     def __del__(self):
         self.h_spiFile.close()
@@ -46,3 +54,4 @@ class ReadSpice:
 if __name__ == '__main__':
     HReadSpaice = ReadSpice('/Users/chenpeijie/Desktop/GitHub/AutoLayout/res_network/a.spi')
     HReadSpaice.read_res()
+    HReadSpaice.show()
