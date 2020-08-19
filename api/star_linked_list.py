@@ -17,12 +17,6 @@ class StarLinkedList:
         if num1 not in self.nodeList:
             node1 = StarNode(num1, num2)
             self.nodeList[num1] = node1
-            value_index = '@'.join(sorted([num1, num2]))
-            if value_index not in self.value_list:
-                self.value_list[value_index] = eval(value)
-            else:
-                self.value_list[value_index] = \
-                    self.cal_parallel_res(self.value_list[value_index], eval(value))
         else:
             if num2 not in self.nodeList[num1].childNodes:
                 self.nodeList[num1].childNodes.append(num2)
@@ -34,12 +28,27 @@ class StarLinkedList:
             if num1 not in self.nodeList[num2].childNodes:
                 self.nodeList[num2].childNodes.append(num1)
 
-    def delNode(self, node: StarNode):
-        self.nodeList.pop(node.num)
+        value_index = '@'.join(sorted([num1, num2]))
+        if value_index not in self.value_list:
+            self.value_list[value_index] = eval(value)
+        else:
+            self.value_list[value_index] = \
+                self.cal_parallel_res(self.value_list[value_index], eval(value))
+
+    def delNode(self, node_num):
+        self.nodeList.pop(node_num)
         for m_node in self.nodeList:
-            for x in self.nodeList[m_node].childNodes:
-                if node.num in x:
-                    x.pop(node.num)
+            if node_num in self.nodeList[m_node].childNodes:
+                self.nodeList[m_node].childNodes.remove(node_num)
+
+    def shortAndDeleteNode(self, node_num):
+        childNodes = self.nodeList[node_num].childNodes
+        self.delNode(node_num)
+        for m_node_num in childNodes:
+            tmpNodesList = list(childNodes)
+            tmpNodesList.remove(m_node_num)
+            self.nodeList[m_node_num].childNodes.extend(tmpNodesList)
+            self.nodeList[m_node_num].childNodes = list(set(self.nodeList[m_node_num].childNodes))
 
     def trace(self, node_num1, node_num2):
         if node_num1 not in self.nodeList:
@@ -67,22 +76,25 @@ class StarLinkedList:
     # node1 <--> res1 <--> node2 <--> res2 <--> node3
     # ==>
     # node1 <--> (res1 + res2) <--> node3
-    def series_res_merge(self, node_num1, node_num2):
-        if node_num1 not in self.nodeList:
-            return None
-        if node_num2 not in self.nodeList:
-            return None
-        next_node_num = self.nodeList[node_num1].childNodes.remove(node_num1)[0]
-        third_node_num = self.nodeList[node_num1].childNodes.remove(next_node_num)[0]
-        value_index1 = '@'.join(sorted([node_num1, next_node_num]))
-        value_index2 = '@'.join(sorted([next_node_num, third_node_num]))
-        value_index3 = '@'.join(sorted([node_num1, third_node_num]))
-        self.value_list[value_index3] = self.value_list[value_index1] + self.value_list[value_index2]
-        self.value_list.pop(value_index1)
-        self.value_list.pop(value_index2)
-        self.delNode(next_node_num)
-        if third_node_num != node_num2:
-            self.series_res_merge(node_num1, node_num2)
-        else:
-            value_index = '@'.join(sorted([node_num1, node_num2]))
-            return self.value_list[value_index]
+    def merge_series_res_node(self):
+        print(self.value_list)
+        merge_flg = False
+        for m_node_num in list(self.nodeList.keys()):
+            childNodes = self.nodeList[m_node_num].childNodes
+            if len(childNodes) == 2:
+                merge_flg = True
+                node_num1 = childNodes[0]
+                node_num2 = childNodes[1]
+                value_index1 = '@'.join(sorted([m_node_num, node_num1]))
+                value_index2 = '@'.join(sorted([m_node_num, node_num2]))
+                value_index3 = '@'.join(sorted([node_num1, node_num2]))
+                if value_index3 not in self.value_list:
+                    self.value_list[value_index3] = self.value_list[value_index1] + self.value_list[value_index2]
+                else:
+                    self.value_list[value_index3] = \
+                        self.cal_parallel_res(self.value_list[value_index3], self.value_list[value_index1] + self.value_list[value_index2])
+                self.value_list.pop(value_index1)
+                self.value_list.pop(value_index2)
+                self.shortAndDeleteNode(m_node_num)
+        print(self.value_list)
+        return(merge_flg)
