@@ -1,6 +1,6 @@
 #!/Library/Frameworks/Python.framework/Versions/3.8/bin/python3.8
 
-from collections import namedtuple
+from collections import defaultdict as ddt
 
 class StarNode:
     def __init__(self, num, child_num):
@@ -10,55 +10,67 @@ class StarNode:
 
 class StarLinkedList:
     def __init__(self):
-        self.nodeList = {}
-        self.value_list = {}
+        self.nodeDict = {}
+        self.valueDict = {}
+        self.instNodeDict = ddt(list)
 
     def addNode(self, num1, num2, value):
-        if num1 not in self.nodeList:
+        if num1 not in self.nodeDict:
             node1 = StarNode(num1, num2)
-            self.nodeList[num1] = node1
+            self.nodeDict[num1] = node1
         else:
-            if num2 not in self.nodeList[num1].childNodes:
-                self.nodeList[num1].childNodes.append(num2)
+            if num2 not in self.nodeDict[num1].childNodes:
+                self.nodeDict[num1].childNodes.append(num2)
 
-        if num2 not in self.nodeList:
+        if num2 not in self.nodeDict:
             node2 = StarNode(num2, num1)
-            self.nodeList[num2] = node2
+            self.nodeDict[num2] = node2
         else:
-            if num1 not in self.nodeList[num2].childNodes:
-                self.nodeList[num2].childNodes.append(num1)
+            if num1 not in self.nodeDict[num2].childNodes:
+                self.nodeDict[num2].childNodes.append(num1)
 
         value_index = '@'.join(sorted([num1, num2]))
-        if value_index not in self.value_list:
-            self.value_list[value_index] = eval(value)
+        if value_index not in self.valueDict:
+            self.valueDict[value_index] = value
         else:
-            self.value_list[value_index] = \
-                self.cal_parallel_res(self.value_list[value_index], eval(value))
+            self.valueDict[value_index] = \
+                self.cal_parallel_res(self.valueDict[value_index], value)
 
     def delNode(self, node_num):
-        self.nodeList.pop(node_num)
-        for m_node in self.nodeList:
-            if node_num in self.nodeList[m_node].childNodes:
-                self.nodeList[m_node].childNodes.remove(node_num)
+        for m_node_num in self.nodeDict[node_num].childNodes:
+            value_index = '@'.join(sorted([node_num, m_node_num]))
+            if value_index in self.valueDict:
+                self.valueDict.pop(value_index)
+        self.nodeDict.pop(node_num)
+        for m_node_num in self.nodeDict:
+            if node_num in self.nodeDict[m_node_num].childNodes:
+                self.nodeDict[m_node_num].childNodes.remove(node_num)
 
     def shortAndDeleteNode(self, node_num):
-        childNodes = self.nodeList[node_num].childNodes
+        childNodes = self.nodeDict[node_num].childNodes
         self.delNode(node_num)
         for m_node_num in childNodes:
             tmpNodesList = list(childNodes)
             tmpNodesList.remove(m_node_num)
-            self.nodeList[m_node_num].childNodes.extend(tmpNodesList)
-            self.nodeList[m_node_num].childNodes = list(set(self.nodeList[m_node_num].childNodes))
+            self.nodeDict[m_node_num].childNodes.extend(tmpNodesList)
+            self.nodeDict[m_node_num].childNodes = list(set(self.nodeDict[m_node_num].childNodes))
+
+    def show_info(self):
+        print('************* link node infomation start ***************')
+        for m_node_num in self.nodeDict:
+            print(f'{m_node_num}:{self.nodeDict[m_node_num].childNodes}')
+        print(f'node res info:{self.valueDict}')
+        print('*************  link node infomation end  ***************\n')
 
     def trace(self, node_num1, node_num2):
-        if node_num1 not in self.nodeList:
+        if node_num1 not in self.nodeDict:
             return None
-        if node_num2 not in self.nodeList:
+        if node_num2 not in self.nodeDict:
             return None
         self.trace_sub(node_num1, node_num2, [node_num1])
 
     def trace_sub(self, node_num1, node_num2, path):
-        for m_node in list(set(self.nodeList[node_num1].childNodes).difference(set(path))):
+        for m_node in list(set(self.nodeDict[node_num1].childNodes).difference(set(path))):
             if m_node == node_num2:
                 sub_path = list(path)
                 sub_path.append(node_num2)
@@ -76,25 +88,54 @@ class StarLinkedList:
     # node1 <--> res1 <--> node2 <--> res2 <--> node3
     # ==>
     # node1 <--> (res1 + res2) <--> node3
-    def merge_series_res_node(self):
-        print(self.value_list)
+    def merge_res_node(self):
         merge_flg = False
-        for m_node_num in list(self.nodeList.keys()):
-            childNodes = self.nodeList[m_node_num].childNodes
-            if len(childNodes) == 2:
-                merge_flg = True
-                node_num1 = childNodes[0]
-                node_num2 = childNodes[1]
-                value_index1 = '@'.join(sorted([m_node_num, node_num1]))
-                value_index2 = '@'.join(sorted([m_node_num, node_num2]))
-                value_index3 = '@'.join(sorted([node_num1, node_num2]))
-                if value_index3 not in self.value_list:
-                    self.value_list[value_index3] = self.value_list[value_index1] + self.value_list[value_index2]
-                else:
-                    self.value_list[value_index3] = \
-                        self.cal_parallel_res(self.value_list[value_index3], self.value_list[value_index1] + self.value_list[value_index2])
-                self.value_list.pop(value_index1)
-                self.value_list.pop(value_index2)
-                self.shortAndDeleteNode(m_node_num)
-        print(self.value_list)
+        not_to_merge_nodes_list = list(self.instNodeDict.values())
+        # 打散
+        not_to_merge_nodes_list = list(self.flat_list(not_to_merge_nodes_list))
+        # 去重
+        not_to_merge_nodes_list = list(set(not_to_merge_nodes_list))
+
+        for m_node_num in list(self.nodeDict.keys()):
+            if m_node_num not in not_to_merge_nodes_list:
+                childNodes = self.nodeDict[m_node_num].childNodes
+                if len(childNodes) == 2:
+                    merge_flg = True
+                    node_num1 = childNodes[0]
+                    node_num2 = childNodes[1]
+                    value_index1 = '@'.join(sorted([m_node_num, node_num1]))
+                    value_index2 = '@'.join(sorted([m_node_num, node_num2]))
+                    r = self.valueDict[value_index1] + self.valueDict[value_index2]
+                    self.delNode(m_node_num)
+                    self.addNode(node_num1, node_num2, r)
+                elif len(childNodes) == 3:
+                    merge_flg = True
+                    node_num1 = childNodes[0]
+                    node_num2 = childNodes[1]
+                    node_num3 = childNodes[2]
+                    value_index1 = '@'.join(sorted([m_node_num, node_num1]))
+                    value_index2 = '@'.join(sorted([m_node_num, node_num2]))
+                    value_index3 = '@'.join(sorted([m_node_num, node_num3]))
+                    r1 = self.valueDict[value_index1]
+                    r2 = self.valueDict[value_index2]
+                    r3 = self.valueDict[value_index3]
+                    r12 = r1 + r2 + r1*r2/r3
+                    r13 = r1 + r3 + r1*r3/r2
+                    r23 = r2 + r3 + r2*r3/r1
+                    self.delNode(m_node_num)
+                    self.addNode(node_num1, node_num2, r12)
+                    self.addNode(node_num1, node_num3, r13)
+                    self.addNode(node_num2, node_num3, r23)
+        if merge_flg:
+            self.merge_res_node()
         return(merge_flg)
+
+    def flat_list(self, ori_list: list):
+        for m_list in ori_list:
+            if isinstance(m_list, list):
+                yield from self.flat_list(m_list)
+            else:
+                yield m_list
+
+    def __del__(self):
+        self.show_info()
