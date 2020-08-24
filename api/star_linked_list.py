@@ -1,6 +1,7 @@
 #!/Library/Frameworks/Python.framework/Versions/3.8/bin/python3.8
 
 from collections import defaultdict as ddt
+import numpy as np
 
 class StarNode:
     def __init__(self, num, child_num):
@@ -67,18 +68,24 @@ class StarLinkedList:
             return None
         if node_num2 not in self.nodeDict:
             return None
-        self.trace_sub(node_num1, node_num2, [node_num1])
+        l_path = self.trace_sub(node_num1, node_num2, [node_num1])
+        print(l_path)
+        return l_path
 
     def trace_sub(self, node_num1, node_num2, path):
+        l_all_path = []
         for m_node in list(set(self.nodeDict[node_num1].childNodes).difference(set(path))):
             if m_node == node_num2:
                 sub_path = list(path)
                 sub_path.append(node_num2)
-                print('Res Path: %s' % sub_path)
+                l_all_path.extend(sub_path)
             else:
                 sub_path = list(path)
                 sub_path.append(m_node)
-                self.trace_sub(m_node, node_num2, sub_path)
+                tmppath = self.trace_sub(m_node, node_num2, sub_path)
+                l_all_path.extend(tmppath)
+        l_all_path = list(set(l_all_path))
+        return l_all_path
 
     def cal_parallel_res(self, res1, res2):
         return res1 * res2 / (res1 + res2)
@@ -129,6 +136,61 @@ class StarLinkedList:
         if merge_flg:
             self.merge_res_node()
         return(merge_flg)
+
+    def p2p(self, node_num1, node_num2):
+        i = 10
+        # r_list = [[0 for x in range(i)] for x in range(i)]
+        # print(r_list)
+        l_mem_nums = self.trace(node_num1, node_num2)
+        print(f'l_mem_nums:{l_mem_nums}')
+        max_size = len(l_mem_nums)
+        r_list = np.zeros(shape=[max_size, max_size])
+        for m_node_num in l_mem_nums:
+            for m_childe_node_num in self.nodeDict[m_node_num].childNodes:
+                index_str = '@'.join(sorted([m_node_num, m_childe_node_num]))
+                if index_str in self.valueDict:
+                    index1 = l_mem_nums.index(m_node_num)
+                    index2 = l_mem_nums.index(m_childe_node_num)
+                    if r_list[index2][index1] == 0:
+                        r_list[index1][index2] = 1/self.valueDict[index_str]
+                    else:
+                        r_list[index1][index2] = -r_list[index2][index1]
+        print(r_list)
+        return r_list
+        print(self.Gaussian(r_list))
+
+    # step0 消元
+    def step0(self, matrix):
+        row = matrix.shape[0]
+
+        # 保证主元为一 或者主元所在行全为 0
+        for i in range(0, row):
+            if not matrix[i, i]:
+                for j in range(i + 1, row):
+                    if matrix[j, i]:
+                        matrix[[i, j], :] = matrix[[j, i], :]
+                        break
+
+        # 开始消元
+        for i in range(0, row - 1):  # 以这些行的主元作为参照依次消除主元以下元素
+            for j in range(i + 1, row):
+                matrix[j, :] = matrix[j, :] - matrix[i, :] / matrix[i, i] * matrix[j, i]
+
+        return matrix
+
+    # step1 回代
+    def step1(self, matrix):
+        row = matrix.shape[0]
+        # 从倒数第二行开始消元
+        for i in range(row - 2, -1, -1):
+            for j in range(i + 1, row):
+                matrix[i, :] = matrix[i, :] - matrix[j, :] / matrix[j, j] * matrix[i, j]
+
+        return matrix
+
+    # 高斯消元法
+    def Gaussian(self, matrix):
+        return self.step1(self.step0(matrix))
 
     def flat_list(self, ori_list: list):
         for m_list in ori_list:
