@@ -161,7 +161,7 @@ class StarLinkedList:
                 value = self.valueDict[index_str]
                 r_list[index1][index2] = -1/value
                 r_list[index1][index1] += 1/value
-        r_list[0][max_size] = 1
+        r_list[0][max_size] = -1
         r_list[max_size-1][max_size] = 1
         index_node1 = l_mem_nums.index(node_num1)
         r_list[index_node1][index_node1] = 0
