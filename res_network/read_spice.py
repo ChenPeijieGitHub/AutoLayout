@@ -61,16 +61,20 @@ class ReadSpice:
             print(m_netName)
             self.linked_dict[m_netName].show_info()
             # self.linked_dict[m_netName].trace('1', '9')
-            return self.linked_dict[m_netName].p2p('1','9')
-            #self.linked_dict[m_netName].merge_res_node()
+
+            self.linked_dict[m_netName].p2p('1','9')
+            return 0
+
+            # self.linked_dict[m_netName].merge_res_node()
+            # self.linked_dict[m_netName].show_info()
 
     def __del__(self):
         self.h_spiFile.close()
 
 
 if __name__ == '__main__':
-    HReadSpaice = ReadSpice('/Users/chenpeijie/Desktop/GitHub/AutoLayout/res_network/res_series.spi')
+    # HReadSpaice = ReadSpice('/Users/chenpeijie/Desktop/GitHub/AutoLayout/res_network/res_series.spi')
     # HReadSpaice = ReadSpice('/Users/chenpeijie/Desktop/GitHub/AutoLayout/res_network/res_parallel_mix_series.spi')
-    # HReadSpaice = ReadSpice('/Users/chenpeijie/Desktop/GitHub/AutoLayout/res_network/res_shape_tian.spi')
+    HReadSpaice = ReadSpice('/Users/chenpeijie/Desktop/GitHub/AutoLayout/res_network/res_shape_tian.spi')
     HReadSpaice.read_res()
     HReadSpaice.show()

@@ -14,6 +14,7 @@ class StarLinkedList:
         self.nodeDict = {}
         self.valueDict = {}
         self.instNodeDict = ddt(list)
+        self.zero = 1e-18
 
     def addNode(self, num1, num2, value):
         if num1 not in self.nodeDict:
@@ -142,55 +143,56 @@ class StarLinkedList:
         # r_list = [[0 for x in range(i)] for x in range(i)]
         # print(r_list)
         l_mem_nums = self.trace(node_num1, node_num2)
-        print(f'l_mem_nums:{l_mem_nums}')
         max_size = len(l_mem_nums)
-        r_list = np.zeros(shape=[max_size, max_size])
+        l_mem_nums.pop(l_mem_nums.index(node_num1))
+        l_mem_nums.pop(l_mem_nums.index(node_num2))
+        tmp = [node_num1]
+        tmp.extend(l_mem_nums)
+        tmp.append(node_num2)
+        l_mem_nums = list(tmp)
+        r_list = np.zeros(shape=[max_size, max_size+1])
+        print(r_list)
+        print(l_mem_nums)
         for m_node_num in l_mem_nums:
             for m_childe_node_num in self.nodeDict[m_node_num].childNodes:
                 index_str = '@'.join(sorted([m_node_num, m_childe_node_num]))
-                if index_str in self.valueDict:
-                    index1 = l_mem_nums.index(m_node_num)
-                    index2 = l_mem_nums.index(m_childe_node_num)
-                    if r_list[index2][index1] == 0:
-                        r_list[index1][index2] = 1/self.valueDict[index_str]
-                    else:
-                        r_list[index1][index2] = -r_list[index2][index1]
-        print(r_list)
+                index1 = l_mem_nums.index(m_node_num)
+                index2 = l_mem_nums.index(m_childe_node_num)
+                value = self.valueDict[index_str]
+                r_list[index1][index2] = -1/value
+                r_list[index1][index1] += 1/value
+        r_list[0][max_size] = 1
+        r_list[max_size-1][max_size] = 1
+        index_node1 = l_mem_nums.index(node_num1)
+        r_list[index_node1][index_node1] = 0
+        self.guassi(r_list)
         return r_list
-        print(self.Gaussian(r_list))
 
-    # step0 消元
-    def step0(self, matrix):
-        row = matrix.shape[0]
-
-        # 保证主元为一 或者主元所在行全为 0
-        for i in range(0, row):
-            if not matrix[i, i]:
-                for j in range(i + 1, row):
-                    if matrix[j, i]:
-                        matrix[[i, j], :] = matrix[[j, i], :]
+    def guassi(self, r_list):
+        print(r_list)
+        n = len(r_list)
+        print(f'n:{n}')
+        # 保证对角线上的值不为0
+        for i in range(0, n):
+            if abs(r_list[i][i]) < self.zero:
+                for j in range(i+1, n):
+                    if abs(r_list[j][i]) > self.zero:
+                        r_list[[i,j],:] = r_list[[j,i],:]
                         break
 
-        # 开始消元
-        for i in range(0, row - 1):  # 以这些行的主元作为参照依次消除主元以下元素
-            for j in range(i + 1, row):
-                matrix[j, :] = matrix[j, :] - matrix[i, :] / matrix[i, i] * matrix[j, i]
+        print(r_list)
 
-        return matrix
+        for i in range(0, n):
+            for j in range(0, i):
+                if abs(r_list[i][j]) > self.zero:
+                    incr = r_list[i][j]/r_list[j][j]
+                    for k in range(0, n+1):
+                        r_list[i][k] = r_list[i][k] - incr * r_list[j][k]
+        print(r_list)
 
-    # step1 回代
-    def step1(self, matrix):
-        row = matrix.shape[0]
-        # 从倒数第二行开始消元
-        for i in range(row - 2, -1, -1):
-            for j in range(i + 1, row):
-                matrix[i, :] = matrix[i, :] - matrix[j, :] / matrix[j, j] * matrix[i, j]
 
-        return matrix
 
-    # 高斯消元法
-    def Gaussian(self, matrix):
-        return self.step1(self.step0(matrix))
+
 
     def flat_list(self, ori_list: list):
         for m_list in ori_list:
@@ -200,4 +202,5 @@ class StarLinkedList:
                 yield m_list
 
     def __del__(self):
-        self.show_info()
+        pass
+        # self.show_info()
