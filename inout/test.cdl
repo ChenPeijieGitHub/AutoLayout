@@ -1,0 +1,16 @@
+
+
+
+.subckt test A B C D I OUT
+NM1 A B C D nch_18_mac w=2u l=80n
+NM2 A B C D nch_18_mac w=2u l=80n
+PM1 B A C D pch_18_mac w=2u l=80n
+PM2 B A C D pch_18_mac w=2u l=80n
+I10 I OUT inv1
+I11 I OUT inv1
+.end
+
+.subckt inv1 in out
+NM2 net1 net2 in out nch_18_mac w=2u l=80n
+PM2 net1 net2 in out nch_18_mac w=2u l=80n
+.end

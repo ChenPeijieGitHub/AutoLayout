@@ -62,7 +62,7 @@ class ReadSpice:
             self.linked_dict[m_netName].show_info()
             # self.linked_dict[m_netName].trace('1', '9')
 
-            self.linked_dict[m_netName].p2p('1','9')
+            self.linked_dict[m_netName].p2p_np('1','9')
             return 0
 
             # self.linked_dict[m_netName].merge_res_node()

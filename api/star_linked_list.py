@@ -2,6 +2,9 @@
 
 from collections import defaultdict as ddt
 import numpy as np
+import networkx as nx
+import matplotlib.pyplot as plt
+
 
 class StarNode:
     def __init__(self, num, child_num):
@@ -138,7 +141,8 @@ class StarLinkedList:
             self.merge_res_node()
         return(merge_flg)
 
-    def p2p(self, node_num1, node_num2):
+    # 高斯消元
+    def p2p_guassi(self, node_num1, node_num2):
         i = 10
         # r_list = [[0 for x in range(i)] for x in range(i)]
         # print(r_list)
@@ -151,8 +155,6 @@ class StarLinkedList:
         tmp.append(node_num2)
         l_mem_nums = list(tmp)
         r_list = np.zeros(shape=[max_size, max_size+1])
-        print(r_list)
-        print(l_mem_nums)
         for m_node_num in l_mem_nums:
             for m_childe_node_num in self.nodeDict[m_node_num].childNodes:
                 index_str = '@'.join(sorted([m_node_num, m_childe_node_num]))
@@ -166,12 +168,13 @@ class StarLinkedList:
         index_node1 = l_mem_nums.index(node_num1)
         r_list[index_node1][index_node1] = 0
         self.guassi(r_list)
+        a = np.triu(r_list)
+        print(a)
+        print(a[-1][-1]/a[-1][-2])
         return r_list
 
     def guassi(self, r_list):
-        print(r_list)
         n = len(r_list)
-        print(f'n:{n}')
         # 保证对角线上的值不为0
         for i in range(0, n):
             if abs(r_list[i][i]) < self.zero:
@@ -180,17 +183,61 @@ class StarLinkedList:
                         r_list[[i,j],:] = r_list[[j,i],:]
                         break
 
-        print(r_list)
-
         for i in range(0, n):
             for j in range(0, i):
                 if abs(r_list[i][j]) > self.zero:
                     incr = r_list[i][j]/r_list[j][j]
                     for k in range(0, n+1):
                         r_list[i][k] = r_list[i][k] - incr * r_list[j][k]
-        print(r_list)
 
 
+    # 高斯消元
+    def p2p_np(self, node_num1, node_num2):
+        i = 10
+        # r_list = [[0 for x in range(i)] for x in range(i)]
+        # print(r_list)
+        l_mem_nums = self.trace(node_num1, node_num2)
+        max_size = len(l_mem_nums)
+        l_mem_nums.pop(l_mem_nums.index(node_num1))
+        l_mem_nums.pop(l_mem_nums.index(node_num2))
+        tmp = [node_num1]
+        tmp.extend(l_mem_nums)
+        tmp.append(node_num2)
+        l_mem_nums = list(tmp)
+        ret_left = np.zeros(shape=[max_size, max_size])
+        ret_right = np.zeros(shape=max_size)
+        for m_node_num in l_mem_nums:
+            for m_childe_node_num in self.nodeDict[m_node_num].childNodes:
+                index_str = '@'.join(sorted([m_node_num, m_childe_node_num]))
+                index1 = l_mem_nums.index(m_node_num)
+                index2 = l_mem_nums.index(m_childe_node_num)
+                value = self.valueDict[index_str]
+                ret_left[index1][index2] = -1/value
+                ret_left[index1][index1] += 1/value
+        ret_right[0] = -1
+        ret_right[max_size-1] = 1
+        ret_left[0][0] = 0
+        print(ret_left)
+        print(ret_right)
+        result = np.linalg.solve(ret_left, ret_right)
+        print(result)
+        print(result[max_size-1]-result[0])
+        G=nx.Graph()
+        ret_right = [f'node{x}:{int(y)}V' for x,y in enumerate(result)]
+        G.add_nodes_from(ret_right)
+        edglist=[]
+        for i in range(0, len(ret_left)):
+            for j in range(0, len(ret_left[0])):
+                if abs(ret_left[i][j]) > 1e-16:
+                    edglist.append([ret_right[i], ret_right[j]])
+        G=nx.Graph(edglist)
+        position = nx.circular_layout(G)
+        nx.draw_networkx_nodes(G,position, nodelist=ret_right[1:-1], node_color="r")
+        nx.draw_networkx_nodes(G,position, nodelist=[ret_right[0],ret_right[-1]], node_color="g")
+        nx.draw_networkx_edges(G,position)
+        nx.draw_networkx_labels(G,position)
+        plt.show()
+        return result[max_size-1]
 
 
 
