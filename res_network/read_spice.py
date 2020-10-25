@@ -44,7 +44,7 @@ class ReadSpice:
                         self.linked_dict[net_name] = StarLinkedList()
                     if node_num not in self.linked_dict[net_name].instNodeDict[inst_name]:
                         self.linked_dict[net_name].instNodeDict[inst_name].append(node_num)
-                    print(self.linked_dict[net_name].instNodeDict[inst_name])
+                    # print(self.linked_dict[net_name].instNodeDict[inst_name])
             elif line[0] == 'R':
                 l_split = line.split()
                 net_name = l_split[1].split('#')[0]
@@ -59,10 +59,10 @@ class ReadSpice:
     def show(self):
         for m_netName in self.linked_dict:
             print(m_netName)
-            self.linked_dict[m_netName].show_info()
+            # self.linked_dict[m_netName].show_info()
             # self.linked_dict[m_netName].trace('1', '9')
 
-            self.linked_dict[m_netName].p2p_np('1','9')
+            self.linked_dict[m_netName].p2p_np('1','7')
             return 0
 
             # self.linked_dict[m_netName].merge_res_node()
@@ -73,8 +73,9 @@ class ReadSpice:
 
 
 if __name__ == '__main__':
-    # HReadSpaice = ReadSpice('/Users/chenpeijie/Desktop/GitHub/AutoLayout/res_network/res_series.spi')
-    # HReadSpaice = ReadSpice('/Users/chenpeijie/Desktop/GitHub/AutoLayout/res_network/res_parallel_mix_series.spi')
-    HReadSpaice = ReadSpice('/Users/chenpeijie/Desktop/GitHub/AutoLayout/res_network/res_shape_tian.spi')
+    path = '/Users/chenpeijie/Desktop/GitHub/AutoLayout/res_network'
+    # HReadSpaice = ReadSpice(f'{path}/res_series.spi')
+    HReadSpaice = ReadSpice(f'{path}/res_parallel_mix_series.spi')
+    # HReadSpaice = ReadSpice(f'{path}/res_shape_tian.spi')
     HReadSpaice.read_res()
     HReadSpaice.show()
