@@ -73,7 +73,7 @@ class StarLinkedList:
         if node_num2 not in self.nodeDict:
             return None
         l_path = self.trace_sub(node_num1, node_num2, [node_num1])
-        print(l_path)
+        print(f'l_path:{l_path}')
         return l_path
 
     def trace_sub(self, node_num1, node_num2, path):
@@ -196,7 +196,12 @@ class StarLinkedList:
         i = 10
         # r_list = [[0 for x in range(i)] for x in range(i)]
         # print(r_list)
+        # self.merge_res_node()
+        # self.show_info()
         l_mem_nums = self.trace(node_num1, node_num2)
+        print(f'l_mem_nums:{l_mem_nums}')
+        l_mem_nums.sort()
+        print(f'l_mem_nums:{l_mem_nums}')
         max_size = len(l_mem_nums)
         l_mem_nums.pop(l_mem_nums.index(node_num1))
         l_mem_nums.pop(l_mem_nums.index(node_num2))
@@ -205,39 +210,32 @@ class StarLinkedList:
         tmp.append(node_num2)
         l_mem_nums = list(tmp)
         ret_left = np.zeros(shape=[max_size, max_size])
-        ret_right = np.zeros(shape=max_size)
+        zeros = np.zeros(shape=max_size)
+        ret_right = zeros
+        print(f'l_mem_nums:{l_mem_nums}')
         for m_node_num in l_mem_nums:
+            print(f'm_node_num:{m_node_num}')
             for m_childe_node_num in self.nodeDict[m_node_num].childNodes:
-                index_str = '@'.join(sorted([m_node_num, m_childe_node_num]))
-                index1 = l_mem_nums.index(m_node_num)
-                index2 = l_mem_nums.index(m_childe_node_num)
-                value = self.valueDict[index_str]
-                ret_left[index1][index2] = -1/value
-                ret_left[index1][index1] += 1/value
+                if m_childe_node_num in l_mem_nums:
+                    index_str = '@'.join(sorted([m_node_num, m_childe_node_num]))
+                    index1 = l_mem_nums.index(m_node_num)
+                    index2 = l_mem_nums.index(m_childe_node_num)
+                    value = self.valueDict[index_str]
+                    ret_left[index1][index2] = -1/value
+                    ret_left[index1][index1] += 1/value
         ret_right[0] = -1
         ret_right[max_size-1] = 1
-        ret_left[0][0] = 0
+        print(ret_left)
+        print(ret_right)
+        ret_left = np.delete(ret_left,0,axis=0)
+        ret_left = np.delete(ret_left,0,axis=1)
+        ret_right = np.delete(ret_right,0,axis=0)
         print(ret_left)
         print(ret_right)
         result = np.linalg.solve(ret_left, ret_right)
-        print(result)
-        print(result[max_size-1]-result[0])
-        G=nx.Graph()
-        ret_right = [f'node{x}:{int(y)}V' for x,y in enumerate(result)]
-        G.add_nodes_from(ret_right)
-        edglist=[]
-        for i in range(0, len(ret_left)):
-            for j in range(0, len(ret_left[0])):
-                if abs(ret_left[i][j]) > 1e-16:
-                    edglist.append([ret_right[i], ret_right[j]])
-        G=nx.Graph(edglist)
-        position = nx.circular_layout(G)
-        nx.draw_networkx_nodes(G,position, nodelist=ret_right[1:-1], node_color="r")
-        nx.draw_networkx_nodes(G,position, nodelist=[ret_right[0],ret_right[-1]], node_color="g")
-        nx.draw_networkx_edges(G,position)
-        nx.draw_networkx_labels(G,position)
-        plt.show()
-        return result[max_size-1]
+        print(f'result:{result}')
+        print(result[-1])
+        return result[-1]
 
 
 
