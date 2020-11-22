@@ -1,0 +1,7 @@
+# map file
+
+M1 drawing 31 0
+M2 drawing 32 0
+
+M1 pin     31 1
+M2 pin     32 1
