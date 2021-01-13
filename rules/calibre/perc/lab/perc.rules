@@ -1,0 +1,178 @@
+/* 
+                Copyright Mentor Graphics Corporation 2014
+                             All Rights Reserved.
+         THIS WORK CONTAINS TRADE SECRET AND PROPRIETARY INFORMATION
+            WHICH IS THE PROPERTY OF MENTOR GRAPHICS CORPORATION
+              OR ITS LICENSORS AND IS SUBJECT TO LICENSE TERMS.
+
+DISCLAIMER OF WARRANTY: Unless otherwise agreed in writing, Mentor Graphics software 
+and associated files are provided "as is" and without warranty. Mentor Graphics has 
+no obligation to support or otherwise maintain software. Mentor Graphics makes no 
+warranties, express or implied with respect to software including any warranty of 
+merchantability or fitness for a particular purpose.
+
+LIMITATION OF LIABILITY: Mentor Graphics is not liable for any property damage, 
+personal injury, loss of profits, interruption of business, or for any other special, 
+consequential or incidental damages, however caused, whether for breach of warranty, 
+contract, tort (including negligence), strict liability or otherwise. In no event 
+shall Mentor Graphics' liability exceed the amount paid for the product giving rise 
+to the claim.
+
+=======================================================================================
+
+For SVRF/TVF file use restrictions, please see:
+               http://www.mentor.com/terms_conditions/svrf-tvf.html
+
+=======================================================================================
+*/
+
+
+SOURCE PATH src.net  
+SOURCE PRIMARY "TOP"
+SOURCE SYSTEM SPICE
+
+PERC NETLIST SOURCE
+PERC REPORT "perc.rep"
+MASK SVDB DIRECTORY "svdb" QUERY
+
+PERC PROPERTY D p
+PERC PROPERTY MN w
+PERC PROPERTY R r
+
+LVS POWER NAME vdd?
+LVS GROUND NAME gnd?
+
+
+
+LVS PERC LOAD esd INIT esd_init SELECT rule_1 
+
+TVF FUNCTION esd [/*
+
+package require CalibreLVS_PERC
+
+set tcl_precision 7
+
+proc esd_init {} {
+     perc::define_net_type "Power"   {lvsPower}
+     perc::define_net_type "Ground"  {lvsGround}
+     perc::define_net_type "Pad" {lvsTopPorts}
+     perc::define_net_type_by_device "Gate" -type {MN MP} -pin {g}  -cell 
+     perc::define_type_set "I_O_Pad" {Pad && !Power && !Ground}
+     
+# Create net path through resistor and verify gate has path to I/O pad.
+     perc::create_net_path -type "R"
+     
+}
+
+proc rule_1 {} {
+
+# Identify all MOS devices and I/O Pads.
+     perc::check_net -netType { Gate } -pathType {I_O_Pad} -condition cond_1 -comment "Improper Protection"
+}
+proc cond_1 {net} {
+
+     set selected 0
+
+# Verify R between gate and I/O Pad (50-100 ohms), HBM diodes exist in the Pad side.
+     set result [perc::count -net $net -type {R} -pinAtNet {p n} -list]
+     set res_count [lindex $result 0]
+     set res_list [lindex $result 1]
+     if { $res_count == 0 } {
+          return $selected
+     }
+     if { $res_count > 0 } {
+          set res_itr [lindex $res_list 0]
+          set r_val  [perc::property $res_itr r]
+          if { ( $r_val < 50 ) || ( $r_val > 100 ) } {
+			
+               return $selected
+          }
+     }
+
+
+# Verify HBM diodes exist in the Pad side.
+     set netItr [perc::get_other_net_on_instance $res_itr $net p n]		 
+     set result [perc::count -net $netItr -type {D} -pinAtNet {p} -pinNetType { {n} {Power} } -list]
+     set up_HBM_count [lindex $result 0]
+     set up_HBM_list [lindex $result 1]
+	
+     set result [perc::count -net $netItr -type {D} -pinAtNet {n} -pinNetType { {p} {Ground} } -list]
+     set down_HBM_count [lindex $result 0]
+     set down_HBM_list [lindex $result 1]
+
+     if { ($up_HBM_count == 0) || ($down_HBM_count == 0) } {
+          return $selected
+     }
+	
+	
+
+	
+# Check CDM up diode and verify its perimeter.
+     set result [perc::count -net $net -type {D} -pinAtNet {p} -pinNetType { {n} {Power} } -list]
+     set up_CDM_count [lindex $result 0]
+     set up_CDM_list [lindex $result 1]
+     if { $up_CDM_count == 0} {
+
+# Report violations in nets, devices and values in each case.
+          perc::report_base_result -title "Missing CDM up diode"
+          set selected 1
+     }
+     if { $up_CDM_count > 0 } {
+          set up_CDM_itr [lindex $up_CDM_list 0]
+          set up_CDM_perim [perc::property $up_CDM_itr p]
+
+          if { ($up_CDM_perim < 100e-6 ) && ($up_CDM_perim != 0) } {
+
+# Report violations in nets, devices and values in each case.
+               perc::report_base_result -value "CDM up diode: [perc::name $up_CDM_itr], has perimeter less than 100um : $up_CDM_perim"
+               set selected 1
+          }
+     }
+
+
+# Check CDM down diode/NFET and verify its perimeter/width.
+     set result [perc::count -net $net -type {D} -pinAtNet {n} -pinNetType { {p} {Ground} } -list]
+     set down_CDM_count [lindex $result 0]
+     set down_CDM_list [lindex $result 1]
+	
+     set result [perc::count -net $net -type {MN} -pinAtNet {D} -pinNetType { {G} {Ground} {S} {Ground} } -list]
+     set cdm_nfet_count [lindex $result 0]
+     set cdm_nfet_list [lindex $result 1]
+	
+
+     if { ($down_CDM_count > 0) && ($cdm_nfet_count == 0) } {
+          set down_CDM_itr [lindex $down_CDM_list 0]
+          set down_CDM_perim [perc::property $down_CDM_itr p]
+			
+          if { ($down_CDM_perim < 100e-6 ) && ($down_CDM_perim != 0) } {
+
+# Report violations in nets, devices and values in each case.
+               perc::report_base_result -value "CDM down diode: [perc::name $down_CDM_itr], has perimeter less than 100um : $down_CDM_perim"
+               set selected 1
+          }				
+     }
+	
+
+     if { ($down_CDM_count == 0) && ($cdm_nfet_count > 0) } {
+          set cdm_nfet_itr [lindex $cdm_nfet_list 0]
+          set cdm_nfet_width [perc::property $cdm_nfet_itr w]
+          if { ($cdm_nfet_width < 250e-6 ) && ($cdm_nfet_width != 0) } {
+
+# Report violations in nets, devices and values in each case.
+               perc::report_base_result -value "CDM NFET: [perc::name $cdm_nfet_itr], has width less than 250um : $cdm_nfet_width"
+               set selected 1
+          }
+     }
+		
+     if { ($down_CDM_count == 0) && ($cdm_nfet_count == 0) } {
+
+# Report violations in nets, devices and values in each case.
+          perc::report_base_result -title "No CDM down diode and No CDM nfet"
+          set selected 1
+     }
+
+     return $selected
+
+} 
+
+*/]

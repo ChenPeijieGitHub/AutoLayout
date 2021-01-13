@@ -1,0 +1,3 @@
+#!/bin/csh -f
+
+calibre -rve -perc svdb &

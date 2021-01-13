@@ -1,0 +1,45 @@
+.SUBCKT c1 C vdd1 gnd
+M0 B A gnd gnd nch L=65e-9 W=2e-6
+M1 B A vdd1 vdd1 pch L=65e-9 W=2e-6
+D0 A vdd1 dio 100e-6 80e-6
+D1 gnd A dio 100e-6 120e-6
+R0 A C 70
+D2 C vdd1 dio 100e-6 120e-6
+D3 gnd C dio 100e-6 120e-6
+.ENDS
+*******************************************
+.SUBCKT c2 C vdd1 gnd
+M0 B A gnd gnd nch L=65e-9 W=2e-6
+M1 B A vdd1 vdd1 pch L=65e-9 W=220e-6
+D0 A vdd1 dio 100e-6 120e-6
+D1 gnd A dio 100e-6 120e-6
+R0 A C 70
+D2 C vdd1 dio 100e-6 120e-6
+D3 gnd C dio 100e-6 120e-6
+.ENDS
+*******************************************
+.SUBCKT c3 C vdd1 gnd
+M0 B A gnd gnd nch L=65e-9 W=2e-6
+M1 B A vdd1 vdd1 pch L=65e-9 W=2e-6
+M2 A gnd gnd gnd nch L=65e-9 W=220e-6
+R0 A C 70
+D2 C vdd1 dio 100e-6 120e-6
+D3 gnd C dio 100e-6 120e-6
+.ENDS
+*******************************************
+.SUBCKT c4 C vdd1 gnd
+M0 B A gnd gnd nch L=65e-9 W=2e-6
+M1 B A vdd1 vdd1 pch L=65e-9 W=2e-6
+R0 A C 60
+D0 C vdd1 dio 100e-6 120e-6
+D1 gnd C dio 100e-6 120e-6
+.ENDS
+*******************************************
+.SUBCKT TOP C1 C2 C3 C4 vdd1 gnd
+X1 C1 vdd1 gnd c1
+X2 C2 vdd1 gnd c2
+X3 C3 vdd1 gnd c3
+X4 C4 vdd1 gnd c4
+.ENDS
+*******************************************
+ 

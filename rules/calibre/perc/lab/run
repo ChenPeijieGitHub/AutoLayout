@@ -1,0 +1,3 @@
+#!/bin/csh -f
+
+calibre -perc -hier -auto perc.rules | tee log
